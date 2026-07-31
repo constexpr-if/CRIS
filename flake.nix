@@ -65,7 +65,7 @@
             runHook postInstall
           '';
         };
-
+        legacyPackages = coqPackages;
       }
     );
 }
