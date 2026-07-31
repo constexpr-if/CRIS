@@ -7,9 +7,9 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       flake-utils,
+      ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -34,13 +34,38 @@
           iris = callPackage coqPackages.iris.override { version = "4.4.0"; };
         };
       in
-      {
+      rec {
         devShell = pkgs.mkShell {
           buildInputs = pkgs.lib.attrValues set ++ [
-            coqPackages.coq-lsp
+            coqPackages.vsrocq-language-server
             pkgs.coqtail-mcp
           ];
         };
+        packages.default = packages.CRIS;
+        packages.CRIS = coqPackages.mkCoqDerivation {
+          owner = "constexpr-if";
+          pname = "CRIS";
+          defaultVersion = "v2026-07-22";
+          release = {
+            v2026-07-22 = {
+              rev = "b3559dad899f8f397101b17693b75878668778e0";
+              sha256 = "sha256-3rhNRsYXofYtVu0tVNzlU7qo0uyVb7kZPT7wTPQa7mI=";
+            };
+            workshop = {
+              rev = "c0bcd04e7ddfed32f1d7b8e5e2e328e3b5957bdd";
+              sha256 = "sha256-6REga0gV0F4rTL3sU785Tn68kzSl+bnVDgSse3NHeKw=";
+            };
+          };
+          propagatedBuildInputs = pkgs.lib.attrValues set;
+          dontConfigure = true;
+          installPhase = ''
+            runHook preInstall
+            make -f Makefile.coq install \
+              COQLIBINSTALL=$out/lib/coq/${coqPackages.coq}/user-contrib
+            runHook postInstall
+          '';
+        };
+
       }
     );
 }
