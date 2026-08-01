@@ -17,26 +17,28 @@
         pkgs = import nixpkgs {
           inherit system;
         };
-        coq = pkgs.coq_9_0;
-        coqPackages = pkgs.mkCoqPackages coq;
-        callPackage = pkgs.lib.callPackageWith (pkgs // params // set);
-        params = {
-          inherit (coqPackages) mkCoqDerivation lib stdlib;
-          inherit (coq) ocamlPackages;
+        coqPackages = (pkgs.mkCoqPackages pkgs.coq_9_0).overrideScope coqOverlay;
+        coqOverlay = final: prev: {
+          paco = final.callPackage prev.paco.override { version = "4.2.3"; };
+          ExtLib = final.callPackage prev.ExtLib.override { version = "0.13.0"; };
+          ITree = final.callPackage prev.ITree.override { version = "5.2.1"; };
+          Ordinal = final.callPackage prev.Ordinal.override { version = "0.5.6"; };
+          stdpp = final.callPackage prev.stdpp.override { version = "1.12.0"; };
+          iris = final.callPackage prev.iris.override { version = "4.4.0"; };
         };
-        set = {
-          inherit coq;
-          paco = callPackage coqPackages.paco.override { version = "4.2.3"; };
-          ExtLib = callPackage coqPackages.ExtLib.override { version = "0.13.0"; };
-          ITree = callPackage coqPackages.ITree.override { version = "5.2.1"; };
-          Ordinal = callPackage coqPackages.Ordinal.override { version = "0.5.6"; };
-          stdpp = callPackage coqPackages.stdpp.override { version = "1.12.0"; };
-          iris = callPackage coqPackages.iris.override { version = "4.4.0"; };
-        };
+        CRIS-deps = with coqPackages; [
+          coq
+          paco
+          ExtLib
+          ITree
+          Ordinal
+          stdpp
+          iris
+        ];
       in
       rec {
         devShell = pkgs.mkShell {
-          buildInputs = pkgs.lib.attrValues set ++ [
+          buildInputs = CRIS-deps ++ [
             coqPackages.vsrocq-language-server
             pkgs.coqtail-mcp
           ];
@@ -56,7 +58,7 @@
               sha256 = "sha256-6REga0gV0F4rTL3sU785Tn68kzSl+bnVDgSse3NHeKw=";
             };
           };
-          propagatedBuildInputs = pkgs.lib.attrValues set;
+          propagatedBuildInputs = CRIS-deps;
           dontConfigure = true;
           installPhase = ''
             runHook preInstall
@@ -65,6 +67,7 @@
             runHook postInstall
           '';
         };
+        packages.CRIS-workshop = packages.CRIS.override { version = "workshop"; };
         legacyPackages = coqPackages;
       }
     );
