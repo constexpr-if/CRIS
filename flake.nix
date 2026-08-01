@@ -25,26 +25,9 @@
           Ordinal = final.callPackage prev.Ordinal.override { version = "0.5.6"; };
           stdpp = final.callPackage prev.stdpp.override { version = "1.12.0"; };
           iris = final.callPackage prev.iris.override { version = "4.4.0"; };
+          inherit CRIS;
         };
-        CRIS-deps = with coqPackages; [
-          coq
-          paco
-          ExtLib
-          ITree
-          Ordinal
-          stdpp
-          iris
-        ];
-      in
-      rec {
-        devShell = pkgs.mkShell {
-          buildInputs = CRIS-deps ++ [
-            coqPackages.vsrocq-language-server
-            pkgs.coqtail-mcp
-          ];
-        };
-        packages.default = packages.CRIS;
-        packages.CRIS = coqPackages.mkCoqDerivation {
+        CRIS = coqPackages.mkCoqDerivation {
           owner = "constexpr-if";
           pname = "CRIS";
           defaultVersion = "v2026-07-22";
@@ -63,10 +46,30 @@
           installPhase = ''
             runHook preInstall
             make -f Makefile.coq install \
-              COQLIBINSTALL=$out/lib/coq/${coqPackages.coq}/user-contrib
+              COQLIBINSTALL=$out/lib/${coq.pname}/${coq.coq-version}/user-contrib
             runHook postInstall
           '';
         };
+        CRIS-deps = with coqPackages; [
+          coq
+          paco
+          ExtLib
+          ITree
+          Ordinal
+          stdpp
+          iris
+        ];
+        coq = coqPackages.coq;
+      in
+      rec {
+        devShell = pkgs.mkShell {
+          buildInputs = CRIS-deps ++ [
+            coqPackages.vsrocq-language-server
+            pkgs.coqtail-mcp
+          ];
+        };
+        packages.default = packages.CRIS;
+        packages.CRIS = CRIS;
         packages.CRIS-workshop = packages.CRIS.override { version = "workshop"; };
         legacyPackages = coqPackages;
       }
